@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocs = require('./swagger/swaggerConfig');
+const authRoutes = require('./routes/authRoutes');
 const calendarRoutes = require('./routes/calendarRoutes');
 
 const app = express();
@@ -21,6 +22,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+app.use('/auth', authRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use('/api', calendarRoutes);
 

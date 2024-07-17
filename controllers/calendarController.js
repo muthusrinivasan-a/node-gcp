@@ -1,6 +1,6 @@
 const { google } = require('googleapis');
-const pool = require('../config/db');
 const oauth2Client = require('../config/googleAuth');
+const Event = require('../models/Event');
 const refreshTokenHandler = require('../utils/refreshTokenHandler');
 
 const fetchCalendarEvents = async (calendarId) => {
@@ -19,23 +19,14 @@ const fetchCalendarEvents = async (calendarId) => {
 };
 
 const storeEventsInDb = async (events) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    for (const event of events) {
-      const { id, summary, start, end } = event;
-      await client.query(
-        'INSERT INTO events (event_id, summary, start_time, end_time) VALUES ($1, $2, $3, $4) ON CONFLICT (event_id) DO NOTHING',
-        [id, summary, start.dateTime || start.date, end.dateTime || end.date]
-      );
-    }
-    await client.query('COMMIT');
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error storing events in the database:', error);
-    throw error;
-  } finally {
-    client.release();
+  for (const event of events) {
+    const { id, summary, start, end } = event;
+    await Event.upsert({
+      event_id: id,
+      summary,
+      start_time: start.dateTime || start.date,
+      end_time: end.dateTime || end.date,
+    });
   }
 };
 
@@ -52,7 +43,11 @@ const fetchAndStoreCalendarEvents = async (req, res) => {
     await storeEventsInDb(allEvents);
     res.status(200).send(allEvents);
   } catch (error) {
-    res.status(500).send('Error fetching and storing calendar events');
+    if (error.message === 'RefreshTokenExpired') {
+      res.status(401).send('Refresh token expired. Please log in again.');
+    } else {
+      res.status(500).send('Error fetching and storing calendar events');
+    }
   }
 };
 
