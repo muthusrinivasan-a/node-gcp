@@ -105,3 +105,12 @@ const fetchGoogleSheetDataController = async (req, res) => {
 
 
 module.exports = { fetchAndStoreCalendarEvents, fetchGoogleSheetDataController, };
+
+
+private renameKeys(obj: any, keyMap: { [key: string]: string }): any {
+    return Object.keys(obj).reduce((acc, key) => {
+      const newKey = keyMap[key] || key; // Use mapped key or retain original
+      acc[newKey] = obj[key];
+      return acc;
+    }, {} as any);
+  }
