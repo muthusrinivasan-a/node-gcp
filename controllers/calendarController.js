@@ -52,32 +52,44 @@ const fetchAndStoreCalendarEvents = async (req, res) => {
 };
 
 // Fetch all data from Google Sheet and process into JSON
-const fetchGoogleSheetData = async (spreadsheetId) => {
+const fetchGoogleSheetData = async (req, res) => {
   await refreshTokenHandler();
-  const sheets = google.sheets({ version: 'v4', auth: oauth2Client });
+ try {
+    const { spreadsheetId, range } = req.body;
 
-  const response = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: '', // Leave range empty to fetch all data
-  });
+    if (!spreadsheetId) {
+      return res.status(400).send('Spreadsheet ID is required');
+    }
 
-  const rows = response.data.values;
+    // Initialize Google Sheets API
+    const sheets = google.sheets({ version: 'v4', auth: oauth2Client });
 
-  if (!rows || rows.length < 2) {
-    throw new Error('Invalid or insufficient data in the sheet');
-  }
-
-  // Use the first row as keys and the rest as values
-  const keys = rows[0];
-  const data = rows.slice(1).map(row => {
-    const obj = {};
-    keys.forEach((key, index) => {
-      obj[key] = row[index] || null; // Assign null for missing values
+    // Fetch data from Google Sheets
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: range || '', // Fetch entire sheet if range is not specified
     });
-    return obj;
-  });
 
-  return data;
+    const rows = response.data.values;
+    if (!rows || rows.length === 0) {
+      return res.status(404).send('No data found in the spreadsheet');
+    }
+
+    // Convert the data into JSON
+    const keys = rows[0];
+    const data = rows.slice(1).map(row => {
+      const obj = {};
+      keys.forEach((key, index) => {
+        obj[key] = row[index] || null;
+      });
+      return obj;
+    });
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error('Error fetching Google Sheets data:', error.message);
+    res.status(500).send('Failed to fetch Google Sheets data');
+  }
 };
 
 // Controller to fetch Google Sheets data
