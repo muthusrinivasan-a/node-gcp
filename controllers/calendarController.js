@@ -51,4 +51,45 @@ const fetchAndStoreCalendarEvents = async (req, res) => {
   }
 };
 
-module.exports = { fetchAndStoreCalendarEvents };
+// Fetch all data from Google Sheet and process into JSON
+const fetchGoogleSheetData = async (spreadsheetId) => {
+  await refreshTokenHandler();
+  const sheets = google.sheets({ version: 'v4', auth: oauth2Client });
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: '', // Leave range empty to fetch all data
+  });
+
+  const rows = response.data.values;
+
+  if (!rows || rows.length < 2) {
+    throw new Error('Invalid or insufficient data in the sheet');
+  }
+
+  // Use the first row as keys and the rest as values
+  const keys = rows[0];
+  const data = rows.slice(1).map(row => {
+    const obj = {};
+    keys.forEach((key, index) => {
+      obj[key] = row[index] || null; // Assign null for missing values
+    });
+    return obj;
+  });
+
+  return data;
+};
+
+// Controller to fetch Google Sheets data
+const fetchGoogleSheetDataController = async (req, res) => {
+  try {
+    const { spreadsheetId } = req.body; // No range needed for the entire sheet
+    const sheetData = await fetchGoogleSheetData(spreadsheetId);
+    res.status(200).json(sheetData);
+  } catch (error) {
+    res.status(500).send(error.message || 'Error fetching Google Sheet data');
+  }
+};
+
+
+module.exports = { fetchAndStoreCalendarEvents, fetchGoogleSheetDataController, };
