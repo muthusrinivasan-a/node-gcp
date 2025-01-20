@@ -1,5 +1,5 @@
 const express = require('express');
-const { fetchAndStoreCalendarEvents } = require('../controllers/calendarController');
+const { fetchAndStoreCalendarEvents, fetchGoogleSheetDataController } = require('../controllers/calendarController');
 
 const router = express.Router();
 
@@ -27,5 +27,6 @@ const router = express.Router();
  *         description: Error fetching and storing events
  */
 router.post('/fetch-calendar-events', fetchAndStoreCalendarEvents);
+router.post('/fetch-google-sheet', fetchGoogleSheetDataController);
 
 module.exports = router;
