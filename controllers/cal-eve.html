@@ -1,4 +1,11 @@
 <form [formGroup]="eventForm" (ngSubmit)="submitEvent()">
+  <label>Select Calendar:</label>
+  <select [(ngModel)]="selectedCalendarId">
+    <option *ngFor="let calendar of calendars" [value]="calendar.id">
+      {{ calendar.summary }}
+    </option>
+  </select>
+
   <label>Title:</label>
   <input type="text" formControlName="summary" required>
 
@@ -20,6 +27,9 @@
   <select formControlName="recurrence">
     <option *ngFor="let option of recurrenceOptions" [value]="option.value">{{ option.label }}</option>
   </select>
+
+  <label>Recurrence Count:</label>
+  <input type="number" formControlName="recurrenceCount" min="1" value="1">
 
   <label>Attendees (comma-separated emails):</label>
   <input type="text" formControlName="attendees">
