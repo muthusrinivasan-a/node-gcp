@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { CalendarService } from '../services/calendar.service';
 
@@ -7,15 +7,18 @@ import { CalendarService } from '../services/calendar.service';
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.scss']
 })
-export class CalendarComponent {
+export class CalendarComponent implements OnInit {
   eventForm: FormGroup;
   isFullDay: boolean = false;
   eventIdToUpdate: string | null = null; // Holds the event ID if updating
+  calendars: any[] = []; // List of available calendars
+  selectedCalendarId: string = 'primary'; // Default calendar
+
   recurrenceOptions = [
     { label: 'None', value: '' },
-    { label: 'Daily', value: 'FREQ=DAILY' },
-    { label: 'Weekly', value: 'FREQ=WEEKLY' },
-    { label: 'Monthly', value: 'FREQ=MONTHLY' }
+    { label: 'Daily', value: 'DAILY' },
+    { label: 'Weekly', value: 'WEEKLY' },
+    { label: 'Monthly', value: 'MONTHLY' }
   ];
 
   constructor(private fb: FormBuilder, private calendarService: CalendarService) {
@@ -26,16 +29,35 @@ export class CalendarComponent {
       end: [''],
       isFullDay: [false],
       recurrence: [''],
-      attendees: [''] // Comma-separated emails
+      recurrenceCount: [1],
+      attendees: ['']
     });
   }
 
-  // Toggle between full-day event and timed event
+  ngOnInit() {
+    this.loadCalendars();
+  }
+
+  loadCalendars() {
+    this.calendarService.getCalendars().subscribe(
+      (response: any) => {
+        this.calendars = response.items || [];
+      },
+      error => {
+        console.error('Error fetching calendars:', error);
+      }
+    );
+  }
+
   onFullDayToggle() {
     this.isFullDay = !this.isFullDay;
   }
 
-  // Submit the form for either creating or updating an event
+  generateRecurrenceRule() {
+    const formData = this.eventForm.value;
+    return formData.recurrence ? `FREQ=${formData.recurrence};COUNT=${formData.recurrenceCount}` : '';
+  }
+
   submitEvent() {
     const formData = this.eventForm.value;
 
@@ -45,48 +67,31 @@ export class CalendarComponent {
       start: this.isFullDay ? formData.start : new Date(formData.start).toISOString(),
       end: this.isFullDay ? formData.end : new Date(formData.end).toISOString(),
       isFullDay: this.isFullDay,
-      recurrence: formData.recurrence,
+      recurrence: this.generateRecurrenceRule(),
       attendees: formData.attendees ? formData.attendees.split(',').map(email => email.trim()) : []
     };
 
     if (this.eventIdToUpdate) {
-      // Update event
-      this.calendarService.updateEvent(this.eventIdToUpdate, eventData).subscribe(
-        (response) => {
+      this.calendarService.updateEvent(this.selectedCalendarId, this.eventIdToUpdate, eventData).subscribe(
+        response => {
           console.log('Event updated successfully:', response);
           this.eventForm.reset();
-          this.eventIdToUpdate = null; // Reset update mode
+          this.eventIdToUpdate = null;
         },
-        (error) => {
+        error => {
           console.error('Error updating event:', error);
         }
       );
     } else {
-      // Create new event
-      this.calendarService.createEvent(eventData).subscribe(
-        (response) => {
+      this.calendarService.createEvent(this.selectedCalendarId, eventData).subscribe(
+        response => {
           console.log('Event created successfully:', response);
           this.eventForm.reset();
         },
-        (error) => {
+        error => {
           console.error('Error creating event:', error);
         }
       );
     }
-  }
-
-  // Load event details into form for editing
-  editEvent(eventId: string, eventData: any) {
-    this.eventForm.patchValue({
-      summary: eventData.summary,
-      description: eventData.description,
-      start: eventData.start.date || eventData.start.dateTime,
-      end: eventData.end.date || eventData.end.dateTime,
-      isFullDay: !!eventData.start.date, // Check if it's a full-day event
-      recurrence: eventData.recurrence ? eventData.recurrence[0].replace('RRULE:', '') : '',
-      attendees: eventData.attendees ? eventData.attendees.map(a => a.email).join(', ') : ''
-    });
-
-    this.eventIdToUpdate = eventId;
   }
 }
