@@ -6,35 +6,43 @@
     </option>
   </select>
 
+  <label>Select Gender:</label>
+  <label>
+    <input type="radio" formControlName="sex" value="Male"> Male
+  </label>
+  <label>
+    <input type="radio" formControlName="sex" value="Female"> Female
+  </label>
+
   <label>Title:</label>
   <input type="text" formControlName="summary" required>
-
-  <label>Description:</label>
-  <textarea formControlName="description"></textarea>
+  <div *ngIf="eventForm.controls['summary'].invalid && eventForm.controls['summary'].touched">
+    <small class="error">Title is required.</small>
+  </div>
 
   <label>Start Date & Time:</label>
-  <input type="datetime-local" formControlName="start" *ngIf="!isFullDay">
-  <input type="date" formControlName="start" *ngIf="isFullDay">
+  <input type="datetime-local" formControlName="start">
+  <div *ngIf="eventForm.controls['start'].invalid && eventForm.controls['start'].touched">
+    <small class="error">Start date is required.</small>
+  </div>
 
   <label>End Date & Time:</label>
-  <input type="datetime-local" formControlName="end" *ngIf="!isFullDay">
-  <input type="date" formControlName="end" *ngIf="isFullDay">
-
-  <label>Full Day Event:</label>
-  <input type="checkbox" (change)="onFullDayToggle()" formControlName="isFullDay">
-
-  <label>Recurrence:</label>
-  <select formControlName="recurrence">
-    <option *ngFor="let option of recurrenceOptions" [value]="option.value">{{ option.label }}</option>
-  </select>
-
-  <label>Recurrence Count:</label>
-  <input type="number" formControlName="recurrenceCount" min="1" value="1">
+  <input type="datetime-local" formControlName="end">
+  <div *ngIf="eventForm.controls['end'].invalid && eventForm.controls['end'].touched">
+    <small class="error">End date is required.</small>
+  </div>
+  <div *ngIf="eventForm.errors?.endDateInvalid">
+    <small class="error">End date must be after start date.</small>
+  </div>
 
   <label>Attendees (comma-separated emails):</label>
   <input type="text" formControlName="attendees">
+  <div *ngIf="eventForm.controls['attendees'].invalid && eventForm.controls['attendees'].touched">
+    <small class="error">One or more email addresses are invalid.</small>
+  </div>
 
-  <button type="submit">
+  <button type="submit" [disabled]="eventForm.invalid">
     {{ eventIdToUpdate ? 'Update Event' : 'Create Event' }}
   </button>
+  <button type="button" (click)="resetForm()" *ngIf="eventIdToUpdate">Cancel Edit</button>
 </form>
