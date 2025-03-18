@@ -1,0 +1,30 @@
+<form [formGroup]="eventForm" (ngSubmit)="submitEvent()">
+  <label>Title:</label>
+  <input type="text" formControlName="summary" required>
+
+  <label>Description:</label>
+  <textarea formControlName="description"></textarea>
+
+  <label>Start Date & Time:</label>
+  <input type="datetime-local" formControlName="start" *ngIf="!isFullDay">
+  <input type="date" formControlName="start" *ngIf="isFullDay">
+
+  <label>End Date & Time:</label>
+  <input type="datetime-local" formControlName="end" *ngIf="!isFullDay">
+  <input type="date" formControlName="end" *ngIf="isFullDay">
+
+  <label>Full Day Event:</label>
+  <input type="checkbox" (change)="onFullDayToggle()" formControlName="isFullDay">
+
+  <label>Recurrence:</label>
+  <select formControlName="recurrence">
+    <option *ngFor="let option of recurrenceOptions" [value]="option.value">{{ option.label }}</option>
+  </select>
+
+  <label>Attendees (comma-separated emails):</label>
+  <input type="text" formControlName="attendees">
+
+  <button type="submit">
+    {{ eventIdToUpdate ? 'Update Event' : 'Create Event' }}
+  </button>
+</form>
