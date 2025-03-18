@@ -9,11 +9,15 @@ export class CalendarService {
 
   constructor(private http: HttpClient) {}
 
-  createEvent(eventData: any) {
-    return this.http.post(`${this.apiUrl}/create-event`, eventData);
+  getCalendars() {
+    return this.http.get(`${this.apiUrl}/list-calendars`);
   }
 
-  updateEvent(eventId: string, eventData: any) {
-    return this.http.put(`${this.apiUrl}/update-event`, { eventId, ...eventData });
+  createEvent(calendarId: string, eventData: any) {
+    return this.http.post(`${this.apiUrl}/event`, { calendarId, ...eventData });
+  }
+
+  updateEvent(calendarId: string, eventId: string, eventData: any) {
+    return this.http.put(`${this.apiUrl}/event`, { calendarId, eventId, ...eventData });
   }
 }
